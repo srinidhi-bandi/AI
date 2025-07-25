@@ -29,23 +29,24 @@ def ucs(grid, start, goal):
 
     while pq:
         cost, current = heapq.heappop(pq)
+
         if current == goal:
             return reconstruct_path(came_from, current)
+
         if current in visited:
             continue
         visited.add(current)
 
         for neighbor in get_neighbors(current, grid):
-            ni, nj = neighbor
-            if grid[ni][nj] == 5:  # "slow terrain"
-                move_cost = 5
-            else:
-                move_cost = 1
+            if neighbor in visited:
+                continue
 
-    if neighbor not in visited:
-        heapq.heappush(pq, (cost + move_cost, neighbor))
-        if neighbor not in came_from:
-            came_from[neighbor] = current
+            ni, nj = neighbor
+            move_cost = 5 if grid[ni][nj] == 5 else 1
+            heapq.heappush(pq, (cost + move_cost, neighbor))
+
+            if neighbor not in came_from:
+                came_from[neighbor] = current
 
     return []
 
@@ -99,18 +100,20 @@ def cell_color(val):
     if val == 1:
         return "background-color: orange"  # Start
     elif val == 2:
-        return "background-color: darkgreen"   # Goal
+        return "background-color: darkgreen"  # Goal
     elif val == -1:
-        return "background-color: black"      # Obstacle
+        return "background-color: black"  # Obstacle
+    elif val == 5:
+        return "background-color: brown"  # Slow terrain
     elif val == 3:
-        return "background-color: violet"  # Path taken
+        return "background-color: violet"  # Path
     else:
-        return "background-color: aqua"       # Free space
+        return "background-color: aqua"  # Free space
 
 
 # Select mode
 st.markdown("### 🖱️ Select what you want to place:")
-mode = st.radio("", ["Start", "Goal", "Obstacle", "Erase"], horizontal=True)
+mode = st.radio("", ["Start", "Goal", "Obstacle", "Slow Terrain", "Erase"], horizontal=True)
 st.session_state.mode = mode
 
 # Instructions
@@ -137,6 +140,9 @@ def click_cell(i, j):
     elif mode == "Obstacle":
         if grid[i][j] == 0:
             grid[i][j] = -1
+    elif mode == "Slow Terrain":
+        if grid[i][j] == 0:
+            grid[i][j] = 5
     elif mode == "Erase":
         if grid[i][j] == 1:
             st.session_state.start_set = False
@@ -156,6 +162,8 @@ for i in range(num_rows):
             label = "G"
         elif val == -1:
             label = "O"
+        elif val == 5:
+            label = "T"  # T for Terrain
         cols[j].button(label, key=f"{i}-{j}", on_click=click_cell, args=(i, j))
 
 # Show styled dataframe
